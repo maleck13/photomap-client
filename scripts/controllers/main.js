@@ -58,6 +58,7 @@ angular.module('photomapApp')
             "lat": it.lonlat[1],
             "thumb":ServiceConfig.api + "pictures?filePath="+it.thumb,
             "id":idx,
+            "date":moment.utc(it.timestamp, 'X').format('YYYY-MM-DD'),
             "show":false,
             "options":{"content":"test" + idx},
             handleMarkerClick: function(gMarker,eventName, model){

@@ -1,17 +1,16 @@
-<!--<div class="header">
+<div class="header">
   <ul class="nav nav-pills pull-right">
     <li class="active"><a ng-href="#">Home</a></li>
-    <li><a ng-href="#">About</a></li>
-    <li><a ng-href="#">Contact</a></li>
+    <li><a ng-href="#/upload">upload</a></li>
   </ul>
   <h3 class="text-muted">photomap</h3>
-</div>-->
+</div>
 <div class="row-fluid" ng-controller="MainCtrl">
   <div class="col-xs-12 col-md-10" style="padding-top: 20px;">
     <ui-gmap-google-map center="map.center" zoom="map.zoom">
       <ui-gmap-markers models="markers" click="'handleMarkerClick'" coords="'self'" icon="'icon'" batchSize="15"  doCluster="true" clusterOptions="{gridSize: 40, maxZoom: 15}" >
         <ui-gmap-windows show="show">
-          <div ng-non-bindable ><img src="{{thumb}}" /></div>
+          <div ng-non-bindable ><img src="{{thumb}}" /><br/><span>{{date}}</span></div>
         </ui-gmap-windows>
       </ui-gmap-markers>
     </ui-gmap-google-map>
