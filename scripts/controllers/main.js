@@ -23,7 +23,7 @@ angular.module('photomapApp')
       min: 1,
       max: 12,
       from: 1,
-      to : moment().get("month")
+      to : moment().get("month") +1
     };
 
     Pictures.getYearRange("maleck13", function (err,ok){
@@ -78,7 +78,7 @@ angular.module('photomapApp')
     var fromDate;
     var toDate;
 
-    function getToDate(){
+    function  getToDate(){
       if(! toYear) toYear = $scope.years.max;
       var to = toYear + "/" + toMonth + "/"+ "01";
       console.log("to year", to);
