@@ -1,7 +1,7 @@
 'use strict';
 
 var ServiceConfig = {
-  "api":"http://localhost:8080/"
+  "api":"http://api.photomap.me/"
 };
 
 angular.module('photomapApp', [
