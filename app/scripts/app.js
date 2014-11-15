@@ -10,6 +10,7 @@ angular.module('photomapApp', [
   'ngSanitize',
   'ngRoute',
   'ui-rangeSlider',
+  'angularFileUpload',
   'google-maps'.ns()
 ])
   .config(['GoogleMapApiProvider'.ns(), function (GoogleMapApi) {
@@ -24,6 +25,10 @@ angular.module('photomapApp', [
       .when('/', {
         templateUrl: 'views/main.html',
         controller: 'MainCtrl'
+      })
+      .when('/upload', {
+        templateUrl: 'views/upload.html',
+        controller: 'UploadCtrl'
       })
       .otherwise({
         redirectTo: '/'
