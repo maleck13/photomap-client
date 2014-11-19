@@ -28,9 +28,21 @@ angular.module('photomapApp')
 
     Pictures.getYearRange("maleck13", function (err,ok){
       console.log("err ",err, ok);
+
+      ok.sort();
       if(err){
         console.log("err ",err);
       }
+      var first = Number(ok[0]);
+      var last = Number(ok[ok.length -1]);
+
+      for(var i=0; i < ok.length; i++){
+        var n =  Number(ok[i]);
+        if( n < first) first = n;
+        else if (n > last) last = n;
+
+      }
+
       var index = ok.length;
       if(ok.length >=2){
         index = index -3;
@@ -45,6 +57,7 @@ angular.module('photomapApp')
 
     function getPicsInRange(from,to){
       if(! from || ! to) return;
+
       Pictures.getPicturesInRange(from,to,function (err,ok){
         $scope.markers = [];
         console.log("total pics ", ok.length);
