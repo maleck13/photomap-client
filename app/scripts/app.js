@@ -1,7 +1,7 @@
 'use strict';
 
 var ServiceConfig = {
-  "api":"http://api.photomap.me/"
+  "api":"http://192.168.33.10:8280/api-photomap/"
 };
 
 angular.module('photomapApp', [
@@ -29,8 +29,15 @@ angular.module('photomapApp', [
       .when('/upload', {
         templateUrl: 'views/upload.html',
         controller: 'UploadCtrl'
+      }).when('/register', {
+        templateUrl: 'views/register.html',
+        controller: 'RegisterCtrl'
+      }).when('/login', {
+        templateUrl: 'views/login.html',
+        controller: 'LoginCtrl'
       })
-      .otherwise({
-        redirectTo: '/'
-      });
+      .when('/pictures', {
+        templateUrl: 'views/pictures.html',
+        controller: 'PicturesCtrl'
+      }).otherwise({redirectTo: '/'});
   });

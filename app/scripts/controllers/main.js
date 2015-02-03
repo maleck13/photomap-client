@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('photomapApp')
-  .controller('MainCtrl', ['$scope','Pictures','GoogleMapApi'.ns(),function ($scope,Pictures,GoogleMapApi) {
+  .controller('MainCtrl', ['$scope','Pictures','GoogleMapApi'.ns(),'$cookieStore',function ($scope,Pictures,GoogleMapApi,$cookieStore) {
     $scope.map = {
       center: {
         latitude: 52,
@@ -26,42 +26,57 @@ angular.module('photomapApp')
       to : moment().get("month") +1
     };
 
-    Pictures.getYearRange("maleck13", function (err,ok){
-      console.log("err ",err, ok);
+    Pictures.getYearRange(function (err,ok){
 
-      ok.sort();
       if(err){
         console.log("err ",err);
+        return;
       }
+      ok.sort();
+
+      console.log("range", ok);
+
       var first = Number(ok[0]);
       var last = Number(ok[ok.length -1]);
 
-      for(var i=0; i < ok.length; i++){
-        var n =  Number(ok[i]);
-        if( n < first) first = n;
-        else if (n > last) last = n;
-
-      }
-
-      var index = ok.length;
-      if(ok.length >=2){
-        index = index -3;
-      }
-      $scope.years = {
-        min: Number(ok[0]),
-        max: Number(ok[ok.length -1]),
-        from:Number(ok[index]),
-        to:Number(ok[ok.length -1])
-      }
+      //for(var i=0; i < ok.length; i++){
+      //  var n =  Number(ok[i]);
+      //  if( n < first) first = n;
+      //  else if (n > last) last = n;
+      //
+      //}
+      //
+      //var index = ok.length;
+      //if(ok.length >=2){
+      //  index = index -3;
+      //}
+      //$scope.years = {
+      //  min: Number(ok[0]),
+      //  max: Number(ok[ok.length -1]),
+      //  from:Number(2011),
+      //  to:Number(ok[ok.length -1])
+      //}
     });
 
     function getPicsInRange(from,to){
       if(! from || ! to) return;
 
       Pictures.getPicturesInRange(from,to,function (err,ok){
+        var sessionId;
+        var uid;
+        if($cookieStore) {
+          var session = $cookieStore.get("session");
+          if(session){
+            sessionId = session["sessionId"];
+            uid = session["userId"];
+          }
+
+        }
         $scope.markers = [];
-        console.log("total pics ", ok.length);
-        ok.forEach(function (it, idx){
+        console.log("total pics ", ok.length);//need paging of some kind
+        var len = ok.length > 10 ? 10 : ok.length;
+        for(var i=0; i < len; i++ ){
+          var it = ok[i];
           $scope.markers.push({
             "latitude":it.lonlat[1],
             "longitude":it.lonlat[0],
@@ -69,22 +84,24 @@ angular.module('photomapApp')
             "year": it.year,
             "lon": it.lonlat[0],
             "lat": it.lonlat[1],
-            "thumb":ServiceConfig.api + "pictures?filePath="+it.thumb,
-            "id":idx,
+            "thumb": ServiceConfig.api + "picture?file="+it.name + "&sessid=" + sessionId +"&userid=" + uid,
+            "id":i,
             "date":moment.utc(it.timestamp, 'X').format('YYYY-MM-DD'),
             "show":false,
-            "options":{"content":"test" + idx},
+            "options":{"content":"test" + i},
             handleMarkerClick: function(gMarker,eventName, model){
               console.log("I was clicked", this, gMarker, model);
+             // gMarker.icon = model.thumbImg;
               this.show = !this.show;
+
 
             }
           });
-        });
+        }
       });
     }
 
-    var fromYear;
+    var fromYear = 2011;
     var toYear;
     var fromMonth =1;
     var toMonth=12;
@@ -93,7 +110,7 @@ angular.module('photomapApp')
 
     function  getToDate(){
       if(! toYear) toYear = $scope.years.max;
-      var to = toYear + "/" + toMonth + "/"+ "01";
+      var to = toYear + "/12/"+ "30";
       console.log("to year", to);
       var t = moment(to);
       toDate = t.endOf("month");

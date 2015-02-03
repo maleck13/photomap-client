@@ -1,7 +1,15 @@
 'use strict';
 
 angular.module('photomapApp')
-  .controller('UploadCtrl',['$scope','$upload', function ($scope,$upload) {
+  .controller('UploadCtrl',['$scope','$upload','$cookieStore', function ($scope,$upload,$cookieStore) {
+
+    var headers = {};
+    var session = $cookieStore.get("session");
+    if(session){
+      headers["x-session-id"] = session["sessionId"];
+      headers["x-user-id"] = session["userId"];
+    }
+
     $scope.onFileSelect = function($files) {
       //$files: an array of files selected, each file has name, size, and type.
       for (var i = 0; i < $files.length; i++) {
@@ -9,7 +17,7 @@ angular.module('photomapApp')
         $scope.upload = $upload.upload({
           url: ServiceConfig.api +'pictures/upload', //upload.php script, node.js route, or servlet url
           //method: 'POST' or 'PUT',
-          //headers: {'header-key': 'header-value'},
+          headers: headers,
           //withCredentials: true,
           data: {myObj: $scope.myModelObj},
           file: file // or list of files ($files) for html5 only
