@@ -67,6 +67,7 @@ angular.module('photomapApp')
         if($cookieStore) {
           var session = $cookieStore.get("session");
           if(session){
+
             sessionId = session["sessionId"];
             uid = session["userId"];
           }
@@ -74,7 +75,7 @@ angular.module('photomapApp')
         }
         $scope.markers = [];
         console.log("total pics ", ok.length);//need paging of some kind
-        var len = ok.length > 10 ? 10 : ok.length;
+        var len = ok.length > 30 ? 30 : ok.length;
         for(var i=0; i < len; i++ ){
           var it = ok[i];
           $scope.markers.push({
