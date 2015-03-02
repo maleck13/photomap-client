@@ -11,9 +11,10 @@ angular.module('photomapApp', [
   'ngRoute',
   'ui-rangeSlider',
   'angularFileUpload',
-  'google-maps'.ns()
+  'uiGmapgoogle-maps',
+  'ngGeolocation'
 ])
-  .config(['GoogleMapApiProvider'.ns(), function (GoogleMapApi) {
+  .config(['uiGmapGoogleMapApiProvider', function (GoogleMapApi) {
     GoogleMapApi.configure({
      // key: 'AIzaSyCasrbOUfMWMnsVxpO8xdm5o7FA1G-UitQ',
       v: '3.17',

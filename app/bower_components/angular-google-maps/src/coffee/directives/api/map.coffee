@@ -1,236 +1,269 @@
-angular.module("google-maps.directives.api".ns())
-.factory "Map".ns(), [
-  "$timeout", '$q',"Logger".ns(), "GmapUtil".ns(), "BaseObject".ns(),
-  "CtrlHandle".ns(), 'IsReady'.ns(), "uuid".ns(),
-  "ExtendGWin".ns(),"ExtendMarkerClusterer".ns(),
-  "GoogleMapsUtilV3".ns(),'GoogleMapApi'.ns(),
+angular.module('uiGmapgoogle-maps.directives.api')
+.factory 'uiGmapMap', [
+  '$timeout', '$q','uiGmapLogger', 'uiGmapGmapUtil', 'uiGmapBaseObject',
+  'uiGmapCtrlHandle', 'uiGmapIsReady', 'uiGmapuuid',
+  'uiGmapExtendGWin', 'uiGmapExtendMarkerClusterer',
+  'uiGmapGoogleMapsUtilV3','uiGmapGoogleMapApi','uiGmapEventsHelper',
   ($timeout,$q, $log, GmapUtil, BaseObject,
     CtrlHandle, IsReady, uuid,
     ExtendGWin, ExtendMarkerClusterer,
-    GoogleMapsUtilV3,GoogleMapApi) ->
-        "use strict"
-        DEFAULTS = undefined
-        initializeItems = [GoogleMapsUtilV3, ExtendGWin, ExtendMarkerClusterer]
-        class Map extends BaseObject
-            @include GmapUtil
-            constructor: ->
-                ctrlFn = ($scope) ->
-                    retCtrl = undefined
-                    $scope.$on '$destroy', ->
-                      IsReady.reset()
+    GoogleMapsUtilV3,GoogleMapApi, EventsHelper) ->
+      'use strict'
+      DEFAULTS = undefined
 
-                    ctrlObj = CtrlHandle.handle $scope
-                    $scope.ctrlType = 'Map'
-                    $scope.deferred.promise.then ->
-                      initializeItems.forEach (i) ->
-                        i.init()
-                    ctrlObj.getMap = ->
-                      $scope.map
-                    retCtrl = _.extend @, ctrlObj
-                    retCtrl
-                @controller = ["$scope", ctrlFn ]
-                self = @
-            restrict: "EMA"
-            transclude: true
-            replace: false
-            #priority: 100,
-            template: '<div class="angular-google-map"><div class="angular-google-map-container"></div><div ng-transclude style="display: none"></div></div>'
+      initializeItems = [GoogleMapsUtilV3, ExtendGWin, ExtendMarkerClusterer]
 
-            scope:
-                center: "=" # required
-                zoom: "=" # required
-                dragging: "=" # optional
-                control: "=" # optional
-                options: "=" # optional
-                events: "=" # optional
-                styles: "=" # optional
-                bounds: "="
+      class Map extends BaseObject
+        @include GmapUtil
+        constructor: ->
+          ctrlFn = ($scope) ->
+            retCtrl = undefined
+            $scope.$on '$destroy', ->
+              IsReady.reset()
 
-            ###
-            @param scope
-            @param element
-            @param attrs
-            ###
-            link: (scope, element, attrs) =>
-                GoogleMapApi.then (maps) =>
-                  DEFAULTS = mapTypeId: maps.MapTypeId.ROADMAP
-                  spawned = IsReady.spawn()
-                  resolveSpawned = =>
-                    spawned.deferred.resolve
-                      instance: spawned.instance
-                      map: _m
-                  # Center property must be specified and provide lat &
-                  # lng properties
-                  if not @validateCoords(scope.center)
-                      $log.error "angular-google-maps: could not find a valid center property"
-                      return
-                  unless angular.isDefined(scope.zoom)
-                      $log.error "angular-google-maps: map zoom property not set"
-                      return
-                  el = angular.element(element)
-                  el.addClass "angular-google-map"
+            ctrlObj = CtrlHandle.handle $scope
+            $scope.ctrlType = 'Map'
+            $scope.deferred.promise.then ->
+              initializeItems.forEach (i) ->
+                i.init()
+            ctrlObj.getMap = ->
+              $scope.map
+            retCtrl = _.extend @, ctrlObj
+            retCtrl
+          @controller = ['$scope', ctrlFn ]
+          self = @
+        restrict: 'EMA'
+        transclude: true
+        replace: false
+        #priority: 100,
+        template: '<div class="angular-google-map"><div class="angular-google-map-container"></div><div ng-transclude style="display: none"></div></div>'
 
-                  # Parse options
-                  opts =
-                      options: {}
-                  opts.options = scope.options  if attrs.options
+        scope:
+          center: '=' # required
+          zoom: '=' # required
+          dragging: '=' # optional
+          control: '=' # optional
+          options: '=' # optional
+          events: '=' # optional
+          eventOpts: '=' # optional
+          styles: '=' # optional
+          bounds: '='
+          update: '=' # optional
 
-                  opts.styles = scope.styles  if attrs.styles
-                  if attrs.type
-                      type = attrs.type.toUpperCase()
-                      if google.maps.MapTypeId.hasOwnProperty(type)
-                          opts.mapTypeId = google.maps.MapTypeId[attrs.type.toUpperCase()]
-                      else
-                          $log.error "angular-google-maps: invalid map type '#{attrs.type}'"
+        link: (scope, element, attrs) =>
+          listeners = []
+          scope.$on '$destroy', ->
+            EventsHelper.removeEvents listeners
 
-                  # Create the map
-                  mapOptions = angular.extend {}, DEFAULTS, opts,
-                    center: @getCoords scope.center
-                    zoom: scope.zoom
-                    bounds: scope.bounds
+          scope.idleAndZoomChanged = false
+          unless scope.center?
+            unbindCenterWatch = scope.$watch 'center', =>
+              return unless scope.center
+              unbindCenterWatch()
+              @link scope, element, attrs #try again
+            return
 
-                  _m = new google.maps.Map(el.find("div")[1], mapOptions)
-                  _m['_id'.ns()] = uuid.generate()
+          GoogleMapApi.then (maps) =>
+            DEFAULTS = mapTypeId: maps.MapTypeId.ROADMAP
+            spawned = IsReady.spawn()
+            resolveSpawned = =>
+              spawned.deferred.resolve
+                instance: spawned.instance
+                map: _gMap
 
-                  dragging = false
+            # Center property must be specified and provide lat &
+            # lng properties
+            if not @validateCoords(scope.center)
+              $log.error 'angular-google-maps: could not find a valid center property'
+              return
+            unless angular.isDefined(scope.zoom)
+              $log.error 'angular-google-maps: map zoom property not set'
+              return
+            el = angular.element(element)
+            el.addClass 'angular-google-map'
 
-                  google.maps.event.addListenerOnce _m, 'idle', ->
-                    scope.deferred.resolve _m
-                    resolveSpawned()
+            # Parse options
+            opts =
+              options: {}
+            opts.options = scope.options  if attrs.options
 
-                  google.maps.event.addListener _m, "dragstart", ->
-                      dragging = true
-                      _.defer ->
-                        scope.$apply (s) ->
-                            s.dragging = dragging if s.dragging?
+            opts.styles = scope.styles  if attrs.styles
+            if attrs.type
+              type = attrs.type.toUpperCase()
+              if google.maps.MapTypeId.hasOwnProperty(type)
+                  opts.mapTypeId = google.maps.MapTypeId[attrs.type.toUpperCase()]
+              else
+                  $log.error "angular-google-maps: invalid map type '#{attrs.type}'"
 
-                  google.maps.event.addListener _m, "dragend", ->
-                      dragging = false
-                      _.defer ->
-                        scope.$apply (s) ->
-                            s.dragging = dragging if s.dragging?
+            # Create the map
+            mapOptions = angular.extend {}, DEFAULTS, opts,
+              center: @getCoords scope.center
+              zoom: scope.zoom
+              bounds: scope.bounds
 
+            _gMap = new google.maps.Map(el.find('div')[1], mapOptions)
+            _gMap['uiGmap_id'] = uuid.generate()
 
-                  google.maps.event.addListener _m, "drag", ->
-                      c = _m.center
-                      _.defer ->
-                          scope.$apply (s) ->
-                              if angular.isDefined(s.center.type)
-                                  s.center.coordinates[1] = c.lat()
-                                  s.center.coordinates[0] = c.lng()
-                              else
-                                  s.center.latitude = c.lat()
-                                  s.center.longitude = c.lng()
+            dragging = false
 
+            listeners.push google.maps.event.addListenerOnce _gMap, 'idle', ->
+              scope.deferred.resolve _gMap
+              resolveSpawned()
 
-                  google.maps.event.addListener _m, "zoom_changed", ->
-                      if scope.zoom isnt _m.zoom
-                          _.defer ->
-                              scope.$apply (s) ->
-                                  s.zoom = _m.zoom
+            disabledEvents =
+              if attrs.events and scope.events?.blacklist?
+                scope.events.blacklist
+              else []
+            if  _.isString disabledEvents
+              disabledEvents = [disabledEvents]
 
+            maybeHookToEvent = (eventName, fn, prefn) ->
+              unless _.contains disabledEvents, eventName
+                prefn() if prefn
+                listeners.push google.maps.event.addListener _gMap, eventName, ->
+                  unless scope.update?.lazy
+                    fn()
 
-                  settingCenterFromScope = false
-                  google.maps.event.addListener _m, "center_changed", ->
-                      c = _m.center
-                      return  if settingCenterFromScope #if the scope notified this change then there is no reason to update scope otherwise infinite loop
-                      _.defer ->
-                          scope.$apply (s) ->
-                              unless _m.dragging
-                                  if angular.isDefined(s.center.type)
-                                      s.center.coordinates[1] = c.lat() if s.center.coordinates[1] isnt c.lat()
-                                      s.center.coordinates[0] = c.lng() if s.center.coordinates[0] isnt c.lng()
-                                  else
-                                      s.center.latitude = c.lat()  if s.center.latitude isnt c.lat()
-                                      s.center.longitude = c.lng()  if s.center.longitude isnt c.lng()
+            unless _.contains disabledEvents, 'all'
+              maybeHookToEvent 'dragstart', ->
+                dragging = true
+                scope.$evalAsync (s) ->
+                  s.dragging = dragging if s.dragging?
 
+              maybeHookToEvent 'dragend', ->
+                dragging = false
+                scope.$evalAsync (s) ->
+                  s.dragging = dragging if s.dragging?
 
-                  google.maps.event.addListener _m, "idle", ->
-                      b = _m.getBounds()
-                      ne = b.getNorthEast()
-                      sw = b.getSouthWest()
-                      _.defer ->
-                          scope.$apply (s) ->
-                              if s.bounds isnt null and s.bounds isnt `undefined` and s.bounds isnt undefined
-                                  s.bounds.northeast =
-                                      latitude: ne.lat()
-                                      longitude: ne.lng()
+              updateCenter = (c = _gMap.center, s =  scope) ->
+                return if _.contains disabledEvents, 'center'
+                if angular.isDefined(s.center.type)
+                  s.center.coordinates[1] = c.lat() if s.center.coordinates[1] isnt c.lat()
+                  s.center.coordinates[0] = c.lng() if s.center.coordinates[0] isnt c.lng()
+                else
+                  s.center.latitude = c.lat()  if s.center.latitude isnt c.lat()
+                  s.center.longitude = c.lng()  if s.center.longitude isnt c.lng()
 
-                                  s.bounds.southwest =
-                                      latitude: sw.lat()
-                                      longitude: sw.lng()
+              settingFromDirective = false
+              maybeHookToEvent 'idle', ->
+                b = _gMap.getBounds()
+                ne = b.getNorthEast()
+                sw = b.getSouthWest()
 
-                  if angular.isDefined(scope.events) and scope.events isnt null and angular.isObject(scope.events)
-                      getEventHandler = (eventName) ->
-                          ->
-                              scope.events[eventName].apply scope, [_m, eventName, arguments]
+                settingFromDirective = true
+                scope.$evalAsync (s)  ->
 
-                      #TODO: Need to keep track of listeners and call removeListener on each
-                      for eventName of scope.events
-                          google.maps.event.addListener _m, eventName, getEventHandler(eventName)  if scope.events.hasOwnProperty(eventName) and angular.isFunction(scope.events[eventName])
+                  updateCenter()
 
-                  # Put the map into the scope
-                  #extending map , maybe hacky.. don't really care right now
-                  _m.getOptions = ->
-                    mapOptions
-                  scope.map = _m
-                  #            google.maps.event.trigger _m, "resize"
+                  if s.bounds isnt null and s.bounds isnt `undefined` and s.bounds isnt undefined and not _.contains(disabledEvents, 'bounds')
+                    s.bounds.northeast =
+                      latitude: ne.lat()
+                      longitude: ne.lng()
 
-                  # check if have an external control hook to direct us manually without watches
-                  #this will normally be an empty object that we extend and slap functionality onto with this directive
-                  if attrs.control? and scope.control?
-                      scope.control.refresh = (maybeCoords) =>
-                          return unless _m?
-                          google.maps.event.trigger _m, "resize" #actually refresh
-                          if maybeCoords?.latitude? and maybeCoords?.latitude?
-                              coords = @getCoords(maybeCoords)
-                              if @isTrue(attrs.pan)
-                                  _m.panTo coords
-                              else
-                                  _m.setCenter coords
-                      ###
-                      I am sure you all will love this. You want the instance here you go.. BOOM!
-                      ###
-                      scope.control.getGMap = ()=>
-                          _m
-                      scope.control.getMapOptions = ->
-                        mapOptions
+                    s.bounds.southwest =
+                      latitude: sw.lat()
+                      longitude: sw.lng()
 
-                  # Update map when center coordinates change
-                  scope.$watch "center", ((newValue, oldValue) =>
-                      coords = @getCoords newValue
-                      return  if coords.lat() is _m.center.lat() and coords.lng() is _m.center.lng()
-                      settingCenterFromScope = true
-                      unless dragging
-                          if !@validateCoords(newValue)
-                              $log.error("Invalid center for newValue: #{JSON.stringify newValue}")
-                          if @isTrue(attrs.pan) and scope.zoom is _m.zoom
-                              _m.panTo coords
-                          else
-                              _m.setCenter coords
+                  if not _.contains(disabledEvents, 'zoom')
+                    s.zoom = _gMap.zoom
+                    scope.idleAndZoomChanged = !scope.idleAndZoomChanged
+                  settingFromDirective = false
 
-                      settingCenterFromScope = false
-                  ), true
-                  scope.$watch "zoom", (newValue, oldValue) ->
-                      return  if _.isEqual(newValue,oldValue)
-                      _.defer ->
-                          _m.setZoom newValue
+            if angular.isDefined(scope.events) and scope.events isnt null and angular.isObject(scope.events)
+              getEventHandler = (eventName) ->
+                -> scope.events[eventName].apply scope, [_gMap, eventName, arguments]
 
-                  scope.$watch "bounds", (newValue, oldValue) ->
-                      return  if newValue is oldValue
-                      if !newValue.northeast.latitude? or !newValue.northeast.longitude? or !newValue.southwest.latitude? or !newValue.southwest.longitude?
-                          $log.error "Invalid map bounds for new value: #{JSON.stringify newValue}"
-                          return
-                      ne = new google.maps.LatLng(newValue.northeast.latitude, newValue.northeast.longitude)
-                      sw = new google.maps.LatLng(newValue.southwest.latitude, newValue.southwest.longitude)
-                      bounds = new google.maps.LatLngBounds(sw, ne)
-                      _m.fitBounds bounds
+              customListeners = []
+              for eventName of scope.events
+                if scope.events.hasOwnProperty(eventName) and angular.isFunction(scope.events[eventName])
+                  customListeners.push google.maps.event.addListener _gMap, eventName, getEventHandler(eventName)
+              listeners.concat customListeners
 
-                  ['options','styles'].forEach (toWatch) ->
-                    scope.$watch toWatch, (newValue,oldValue) ->
-                      watchItem = @exp
-                      return  if _.isEqual(newValue,oldValue)
-                      opts.options = newValue
-                      _m.setOptions opts  if _m?
-                  ,true
-    ]
+            # Put the map into the scope
+            # free-draw-polygons depends on this
+            #possibly risky, but this adds the original options to be accessible
+            #if we end up watching options this should be updated (appears to be free-draw only this should probably go away)
+            _gMap.getOptions = ->
+              mapOptions
+            scope.map = _gMap
+
+            # check if have an external control hook to direct us manually without watches
+            # this will normally be an empty object that we extend and slap functionality
+            # onto with this directive
+            if attrs.control? and scope.control?
+              scope.control.refresh = (maybeCoords) =>
+                return unless _gMap?
+                if google?.maps?.event?.trigger? and _gMap?
+                  google.maps.event.trigger _gMap, 'resize' #actually refresh
+                if maybeCoords?.latitude? and maybeCoords?.longitude?
+                  coords = @getCoords(maybeCoords)
+                  if @isTrue(attrs.pan)
+                    _gMap.panTo coords
+                  else
+                    _gMap.setCenter coords
+
+              scope.control.getGMap = ->
+                _gMap
+              scope.control.getMapOptions = ->
+                mapOptions
+              #make customListeners available so a user can de-register the ones they want
+              #they can map / trim this list and hand it back to us
+              scope.control.getCustomEventListeners = ->
+                customListeners
+              scope.control.removeEvents = (yourListeners) ->
+                EventsHelper.removeEvents(yourListeners)
+
+            #UPDATES / SETS FROM CONTROLLER TO COMMAND DIRECTIVE
+            #TODO: These watches could potentially be removed infavor of using control only
+            # Update map when center coordinates change
+            scope.$watch 'center', (newValue, oldValue) =>
+              return if newValue == oldValue or settingFromDirective
+              coords = @getCoords scope.center #get scope.center to make sure that newValue is not behind
+              return  if coords.lat() is _gMap.center.lat() and coords.lng() is _gMap.center.lng()
+              settingCenterFromScope = true
+              unless dragging
+                if !@validateCoords(newValue)
+                  $log.error("Invalid center for newValue: #{JSON.stringify newValue}")
+                if @isTrue(attrs.pan) and scope.zoom is _gMap.zoom
+                  _gMap.panTo coords
+                else
+                  _gMap.setCenter coords
+
+              settingCenterFromScope = false
+            , true
+
+            zoomPromise = null
+            scope.$watch 'zoom', (newValue, oldValue) =>
+              return unless newValue?
+              return  if _.isEqual(newValue,oldValue) or _gMap?.getZoom() == scope?.zoom or settingFromDirective
+              #make this time out longer than zoom_changes because zoom_changed should be done first
+              #being done first should make scopes equal
+              settingZoomFromScope = true
+
+              $timeout.cancel(zoomPromise) if zoomPromise?
+              zoomPromise = $timeout  ->
+                _gMap.setZoom newValue
+                settingZoomFromScope = false
+              , scope.eventOpts?.debounce?.zoomMs + 20, false # use $timeout as a simple wrapper for setTimeout without calling $apply
+
+            scope.$watch 'bounds', (newValue, oldValue) ->
+              return  if newValue is oldValue
+              if !newValue?.northeast?.latitude? or !newValue?.northeast?.longitude? or !newValue?.southwest?.latitude? or !newValue?.southwest?.longitude?
+                $log.error "Invalid map bounds for new value: #{JSON.stringify newValue}"
+                return
+              ne = new google.maps.LatLng(newValue.northeast.latitude, newValue.northeast.longitude)
+              sw = new google.maps.LatLng(newValue.southwest.latitude, newValue.southwest.longitude)
+              bounds = new google.maps.LatLngBounds(sw, ne)
+              _gMap.fitBounds bounds
+
+            ['options','styles'].forEach (toWatch) ->
+              scope.$watch toWatch, (newValue,oldValue) ->
+                watchItem = @exp
+                return  if _.isEqual(newValue,oldValue)
+                if watchItem == 'options'
+                  opts.options = newValue
+                else
+                  opts.options[watchItem] = newValue
+                _gMap.setOptions opts  if _gMap?
+              , true
+  ]

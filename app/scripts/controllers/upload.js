@@ -10,7 +10,20 @@ angular.module('photomapApp')
       headers["x-user-id"] = session["userId"];
     }
 
+
+
+
+    //sock.close();
+
     $scope.onFileSelect = function($files) {
+      $scope.progress = 0;
+      $scope.$apply();
+      var socket = new SockJS(ServiceConfig.api + 'updates');
+      var stompClient = Stomp.over(socket);
+      stompClient.connect({}, function(frame) {
+        //setConnected(true);
+        console.log('Connected: ' + frame);
+      });
       //$files: an array of files selected, each file has name, size, and type.
       for (var i = 0; i < $files.length; i++) {
         var file = $files[i];
@@ -26,13 +39,36 @@ angular.module('photomapApp')
           //fileFormDataName: myFile, //or a list of names for multiple files (html5). Default is 'file'
           // customize how data is added to formData. See #40#issuecomment-28612000 for sample code
           //formDataAppender: function(formData, key, val){}
+
         }).progress(function(evt) {
-          console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+          $scope.progress = parseInt(70.0 * evt.loaded / evt.total);
+          if($scope.progress == 70){
+            $scope.progressMessage = "upload finished +" + $scope.progress + " complete";
+          }
         }).success(function(data, status, headers, config) {
+
+          stompClient.subscribe('/queue/jobupdate/'+data.key , function (calResult) {
+
+            var res = JSON.parse(calResult.body);
+            if(res.Status === "complete" || res.Status === "error"){
+              socket.close();
+            }
+            console.log("message ", res.Message);
+            $scope.progress+=10;
+            $scope.progressMessage = res.Message + " " + $scope.progress;
+            $scope.$apply();
+
+
+          });
+
+          stompClient.send("/jobs/update/"+data.key, {}, JSON.stringify({ 'name': name }));
           // file is uploaded successfully
-          console.log(data);
+
+
+        })
+        .error(function (){
+
         });
-        //.error(...)
         //.then(success, error, progress);
         // access or attach event listeners to the underlying XMLHttpRequest.
         //.xhr(function(xhr){xhr.upload.addEventListener(...)})

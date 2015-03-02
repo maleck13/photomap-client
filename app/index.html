@@ -22,12 +22,21 @@
 
   </head>
   <body ng-app="photomapApp">
+  <div class="header">
+    <ul class="nav nav-pills pull-right">
+      <li class="active"><a ng-href="#">Home</a></li>
+      <li class="active"><a ng-href="#/register">Register</a></li>
+      <li class="active"><a ng-href="#/login">Login</a></li>
+      <li><a ng-href="#/upload">upload</a></li>
+    </ul>
+    <h3 class="text-muted">photomap</h3>
+  </div>
     <!--[if lt IE 7]>
       <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
 
     <!-- Add your site or application content here -->
-    <div class="container" ng-view=""></div>
+    <div class="contailer-fluid" ng-view=""></div>
 
     <!-- Google Analytics: change UA-XXXXX-X to be your site's ID -->
      <script>
@@ -39,6 +48,8 @@
        ga('create', 'UA-XXXXX-X');
        ga('send', 'pageview');
     </script>
+    <script src="http://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
     <!--[if lt IE 9]>
     <script src="bower_components/es5-shim/es5-shim.js"></script>
@@ -47,7 +58,7 @@
 
     <!-- build:js scripts/vendor.js -->
     <!-- bower:js -->
-    <script src="bower_components/jquery/dist/jquery.js"></script>
+    <script src="bower_components/jquery/jquery.js"></script>
     <script src="bower_components/lodash/dist/lodash.compat.js"></script>
     <script src="bower_components/bluebird/js/browser/bluebird.js"></script>
     <script src="bower_components/angular/angular.js"></script>
@@ -63,6 +74,7 @@
     <script src="bower_components/ng-file-upload-shim/angular-file-upload-shim.js"></script>
     <!-- endbower -->
     <!-- endbuild -->
+  <script src="bower_components/ngGeolocation/ngGeolocation.js"></script>
 
         <!-- build:js({.tmp,app}) scripts/scripts.js -->
         <script src="scripts/app.js"></script>

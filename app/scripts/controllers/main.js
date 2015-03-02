@@ -1,20 +1,39 @@
 'use strict';
 
 angular.module('photomapApp')
-  .controller('MainCtrl', ['$scope','Pictures','GoogleMapApi'.ns(),'$cookieStore',function ($scope,Pictures,GoogleMapApi,$cookieStore) {
+  .controller('MainCtrl', ['$scope','Pictures','uiGmapGoogleMapApi','$cookieStore','$geolocation',function ($scope,Pictures,GoogleMapApi,$cookieStore,$geolocation) {
+
+    $geolocation.getCurrentPosition().then(function(location) {
+      $scope.location = location
+    });
+
     $scope.map = {
       center: {
-        latitude: 52,
-        longitude: -7.3
+        latitude:52 ,
+        longitude: -7.2
       },
-      zoom: 8
+      zoom: 2
     };
+
+    $scope.$watch('location', function (newValue, oldValue) {
+      console.log("position changed", newValue);
+        if(newValue) {
+          $scope.map = {
+            center: {
+              latitude: newValue.coords.latitude,
+              longitude: newValue.coords.longitude
+            },
+            zoom: 7
+          };
+        }
+    }, true);
+
 
     $scope.markers = [];
 
     $scope.years = {
       min: Number(1990),
-      max: Number(2014)
+      max: Number(2015)
     };
 
     $scope.quantity = 7;
@@ -36,26 +55,14 @@ angular.module('photomapApp')
 
       console.log("range", ok);
 
-      var first = Number(ok[0]);
-      var last = Number(ok[ok.length -1]);
-
-      //for(var i=0; i < ok.length; i++){
-      //  var n =  Number(ok[i]);
-      //  if( n < first) first = n;
-      //  else if (n > last) last = n;
-      //
-      //}
-      //
-      //var index = ok.length;
-      //if(ok.length >=2){
-      //  index = index -3;
-      //}
-      //$scope.years = {
-      //  min: Number(ok[0]),
-      //  max: Number(ok[ok.length -1]),
-      //  from:Number(2011),
-      //  to:Number(ok[ok.length -1])
-      //}
+      if(ok.length > 0) {
+        $scope.years = {
+          min: Number(ok[0]),
+          max: Number(ok[ok.length - 1]),
+          from: Number(ok[0]),
+          to: Number(ok[ok.length - 1])
+        }
+      }
     });
 
     function getPicsInRange(from,to){
@@ -91,9 +98,9 @@ angular.module('photomapApp')
             "show":false,
             "options":{"content":"test" + i},
             handleMarkerClick: function(gMarker,eventName, model){
-              console.log("I was clicked", this, gMarker, model);
+              console.log("I was clicked", model);
              // gMarker.icon = model.thumbImg;
-              this.show = !this.show;
+              model.show = !model.show;
 
 
             }
@@ -111,7 +118,7 @@ angular.module('photomapApp')
 
     function  getToDate(){
       if(! toYear) toYear = $scope.years.max;
-      var to = toYear + "/12/"+ "30";
+      var to = toYear + "/"+toMonth+"/"+ "30";
       console.log("to year", to);
       var t = moment(to);
       toDate = t.endOf("month");
@@ -125,6 +132,18 @@ angular.module('photomapApp')
       fromDate = moment(from).unix();
       console.log("from date ", fromDate);
     }
+
+    $scope.markerControl = {};
+
+    $scope.thumbClick = function (){
+      console.log("clicked " , this.$index, $scope.markerControl.getPlurals());
+      var marker = $scope.markerControl.getPlurals().get(this.$index);
+      console.log(marker);
+      new google.maps.event.trigger( marker.gObject, 'click' );
+      $scope.map.center.latitude = marker.clonedModel.latitude;
+      $scope.map.center.longitude = marker.clonedModel.longitude;
+      $scope.map.zoom = 10;
+    };
 
     $scope.$watch('years.from', function() {
       console.log('hey, myVar has changed!', this);
@@ -158,6 +177,7 @@ angular.module('photomapApp')
 
 
     $scope.$watch('months.to', function (){
+      console.log('hey, myVar has changed!', this);
       if(this.last) {
         var oldMonth = toMonth;
         toMonth = this.last;
@@ -169,6 +189,7 @@ angular.module('photomapApp')
     });
 
     $scope.$watch('months.from', function (){
+      console.log('hey, myVar has changed!', this);
       if(this.last) {
         var oldMonth = fromMonth;
         fromMonth = this.last;
@@ -176,12 +197,13 @@ angular.module('photomapApp')
 
         getToDate();
         getFromDate();
+        console.log('hey, myVar has changed! from to ', fromDate);
         getPicsInRange(fromDate,toDate);
       }
     });
 
     GoogleMapApi.then(function(maps){
-      console.log("maps ready");
+      console.log("maps ready", maps);
 
 
     });

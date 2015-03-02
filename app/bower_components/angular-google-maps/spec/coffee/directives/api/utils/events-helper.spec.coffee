@@ -1,19 +1,20 @@
-describe 'EventsHelper'.ns(), ->
+describe 'uiGmapEventsHelper', ->
   scope = null
   beforeEach ->
-    module "google-maps.directives.api.utils".ns()
-    module "google-maps.mocks"
-    inject ['EventsHelper'.ns(), 'GoogleApiMock', (EventsHelper, GoogleApiMock) =>
+    module 'uiGmapgoogle-maps.directives.api.utils'
+    module 'uiGmapgoogle-maps.mocks'
+    @injects.push ['uiGmapEventsHelper', 'GoogleApiMock', (EventsHelper, GoogleApiMock) =>
       @subject = EventsHelper
       @gmap = new GoogleApiMock()
       @gmap.mockAPI()
       @listeners = @gmap.mockEvent()
     ]
+    @injectAll()
 
     scope =
       events:
         click: ->
-      $apply: (arg) ->
+      $evalAsync: (arg) ->
         return
   it 'exists', ->
     expect(@subject).toBeDefined()
@@ -24,7 +25,7 @@ describe 'EventsHelper'.ns(), ->
 
     it 'add events', ->
       spyOn scope.events, 'click'
-      @subject.setEvents @, scope, "model"
+      @subject.setEvents @, scope, 'model'
       window.google.maps.event.fireListener @, 'click'
       expect(scope.events.click).toHaveBeenCalled()
 
@@ -33,7 +34,7 @@ describe 'EventsHelper'.ns(), ->
       expect(@subject.removeEvents).toBeDefined()
 
     it 'removes the listeners', ->
-      listeners = @subject.setEvents @, scope, "model"
+      listeners = @subject.setEvents @, scope, 'model'
       expect(@listeners.length).toBe(1)
       @subject.removeEvents @listeners
       expect(@listeners.length).toBe(0)

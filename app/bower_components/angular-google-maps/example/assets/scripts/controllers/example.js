@@ -1,10 +1,11 @@
-angular.module("angular-google-maps-example", ["google-maps".ns()])
+'use strict';
+angular.module("angular-google-maps-example", ['uiGmapgoogle-maps'])
 
 .value("rndAddToLatLon", function () {
   return Math.floor(((Math.random() < 0.5 ? -1 : 1) * 2) + 1);
 })
 
-.config(['GoogleMapApiProvider'.ns(), function (GoogleMapApi) {
+.config(['uiGmapGoogleMapApiProvider', function (GoogleMapApi) {
   GoogleMapApi.configure({
 //    key: 'your api key',
     v: '3.17',
@@ -25,9 +26,9 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
   };
 })
 
-.controller("ExampleController",['$scope', '$timeout', 'Logger'.ns(), '$http', 'rndAddToLatLon','GoogleMapApi'.ns()
+.controller("ExampleController",['$scope', '$timeout', 'uiGmapLogger', '$http', 'rndAddToLatLon','uiGmapGoogleMapApi'
     , function ($scope, $timeout, $log, $http, rndAddToLatLon,GoogleMapApi) {
-  $log.doLog = true
+  $log.currentLevel = $log.LEVELS.debug;
 
   GoogleMapApi.then(function(maps) {
     $scope.googleVersion = maps.version;
@@ -172,6 +173,49 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
     return ret;
   };
 
+
+  var clusterTypes = ['standard','ugly','beer'];
+  var selectedClusterTypes = {
+    ugly:{
+      title: 'Hi I am a Cluster!',
+      gridSize: 60, ignoreHidden: true,
+      minimumClusterSize: 2,
+      imageExtension: 'png',
+      imagePath: 'assets/images/cluster', imageSizes: [72]
+    },
+    beer:{
+      title: 'Beer!',
+      gridSize: 60,
+      ignoreHidden: true,
+      minimumClusterSize: 2,
+      enableRetinaIcons: true,
+      styles: [{
+        url: 'assets/images/beer.png',
+        textColor: '#ddddd',
+        textSize: 18,
+        width: 33,
+        height: 33,
+      }]
+    },
+    standard:{
+      title: 'Hi I am a Cluster!', gridSize: 60, ignoreHidden: true, minimumClusterSize: 2
+    }
+  };
+  var selectClusterType = function(value){
+    var cloned = _.clone($scope.map.randomMarkers, true);
+    $scope.map.randomMarkers = [];
+    $scope.map.clusterOptions = $scope.map.selectedClusterTypes[value] || $scope.map.selectedClusterTypes['standard'];
+    $scope.map.clusterOptionsText =  angular.toJson($scope.map.clusterOptions);
+    if(!value){
+      value = 'standard';
+    }
+    $timeout(function(){
+      $scope.map.randomMarkers = cloned;
+    },200);
+
+    return value;
+  };
+
   angular.extend($scope, {
     example2: {
       doRebuildAll: false
@@ -283,25 +327,17 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
           mid: 1,
           latitude: 29.302567,
           longitude: -106.248779,
-          onClicked: function(gMarker,eventName, model){
 
-          }
         },
         {
           mid: 2,
           latitude: 30.369913,
           longitude: -109.434814,
-          onClicked: function(gMarker,eventName, model){
-
-          }
         },
         {
           mid: 3,
           latitude: 26.739478,
           longitude: -108.61084,
-          onClicked: function(gMarker,eventName, model){
-
-          }
         }
       ],
       clickMarkers: [
@@ -314,15 +350,20 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
       dynamicMarkers: [],
       randomMarkers: [],
       doClusterRandomMarkers: true,
-      doUgly: false, //great name :)
-      clusterOptions: {title: 'Hi I am a Cluster!', gridSize: 60, ignoreHidden: true, minimumClusterSize: 2,
-        imageExtension: 'png', imagePath: 'assets/images/cluster', imageSizes: [72]},
+      currentClusterType: 'standard',
+      clusterTypes: clusterTypes,
+      selectClusterType: selectClusterType,
+      selectedClusterTypes: selectedClusterTypes,
+      clusterOptions: selectedClusterTypes['standard'],
       clickedMarker: {
         id: 0,
         options:{
         }
       },
       events: {
+//This turns of events and hits against scope from gMap events this does speed things up
+// adding a blacklist for watching your controller scope should even be better
+//        blacklist: ['drag', 'dragend','dragstart','zoom_changed', 'center_changed'],
         tilesloaded: function (map, eventName, originalEventArgs) {
         },
         click: function (mapModel, eventName, originalEventArgs) {
@@ -346,7 +387,6 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
           $scope.$apply();
         },
         dragend: function () {
-          self = this;
           $timeout(function () {
             var markers = [];
 
@@ -381,7 +421,8 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
           longitude: -44.296875
         },
         options: {
-          boxClass: 'custom-info-window'
+          boxClass: 'custom-info-window',
+          disableAutoPan: true
         },
         show: true
       },
@@ -523,12 +564,10 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
     }
 
   });
-  var marker2Dragend = function (marker, eventName, model, args) {
-    model.options.labelContent = "Dragged lat: " + model.latitude + " lon: " + model.longitude;
-//    $scope.map.markers2[marker.key-1] = model;
-  };
   $scope.map.markers2Events = {
-    dragend: marker2Dragend
+    dragend: function (marker, eventName, model, args) {
+      model.options.labelContent = "Dragged lat: " + model.latitude + " lon: " + model.longitude;
+    }
   };
 
   _.each($scope.map.markers, function (marker) {
@@ -541,11 +580,7 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
     };
   });
 
-  _.each($scope.map.markers2, function (marker) {
-    marker.closeClick = function () {
-      marker.showWindow = false;
-      $scope.$apply();
-    };
+  $scope.map.markers2.forEach( function (marker) {
     marker.onClicked = function () {
       onMarkerClicked(marker);
     };
@@ -590,27 +625,6 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
       $scope.map.clusterOptions = angular.fromJson($scope.map.clusterOptionsText);
   });
 
-  var doUglyFn = function (value) {
-    if (value === undefined || value === null) {
-      value = $scope.map.doUgly;
-    }
-    var json;
-    if (value)
-      json = {title: 'Hi I am a Cluster!', gridSize: 60, ignoreHidden: true, minimumClusterSize: 2,
-        imageExtension: 'png', imagePath: 'assets/images/cluster', imageSizes: [72]};
-    else
-      json = {title: 'Hi I am a Cluster!', gridSize: 60, ignoreHidden: true, minimumClusterSize: 2};
-    $scope.map.clusterOptions = json;
-    $scope.map.clusterOptionsText = angular.toJson(json);
-  };
-  doUglyFn();
-
-  $scope.$watch('map.doUgly', function (newValue, oldValue) {
-    if (newValue !== oldValue) {
-      doUglyFn(newValue);
-    }
-  });
-
   $scope.genRandomMarkers = function (numberOfMarkers) {
     genRandomMarkers(numberOfMarkers, $scope);
   };
@@ -629,17 +643,18 @@ angular.module("angular-google-maps-example", ["google-maps".ns()])
         $log.log(marker.getPosition().lng());
       }
     }
-  }
+  };
   $scope.onMarkerClicked = onMarkerClicked;
 
   $scope.clackMarker = function (gMarker,eventName, model) {
+    alert("clackMarker: " + model);
     $log.log("from clackMarker");
     $log.log(model);
   };
 
   $timeout(function () {
     $scope.map.infoWindow.show = true;
-    dynamicMarkers = [
+    var dynamicMarkers = [
       {
         id: 1,
         latitude: 46,

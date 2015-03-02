@@ -1,9 +1,11 @@
-describe "WindowsParentModel".ns(), ->
+describe 'uiGmapWindowsParentModel', ->
   beforeEach ->
-    angular.mock.module("google-maps.directives.api.models.parent".ns())
+    angular.mock.module('mockModule', 'uiGmapgoogle-maps')
 
-    inject ['$rootScope', '$timeout', '$compile', '$http', '$templateCache', '$interpolate',
-    ($rootScope, $timeout, $compile, $http, $templateCache, $interpolate) =>
-      @scope = $rootScope.$new()
-      @subject = new WindowsParentModel(@scope,)
-    ]
+
+    inject  ($rootScope, uiGmapWindowsParentModel) =>
+        @scope = $rootScope.$new()
+        @subject = new uiGmapWindowsParentModel(@scope, {}, {}, {})
+
+  it 'has plurals', ->
+    expect(@subject.plurals).toBeDefined()

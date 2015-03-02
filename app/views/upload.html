@@ -1,5 +1,4 @@
 <div ng-controller="UploadCtrl" style="padding-top: 20px;">
-  <input type="text" ng-model="myModelObj">
   <input type="file" ng-file-select="onFileSelect($files)">
  <!-- <input type="file" ng-file-select="onFileSelect($files)" multiple accept="image/*">-->
   <!--<div class="button" ng-file-select="onFileSelect($files)" data-multiple="true"></div>-->
@@ -7,5 +6,11 @@
        ng-show="dropSupported">drop files here</div>
   <div ng-file-drop-available="dropSupported=true"
        ng-show="!dropSupported">HTML5 Drop File is not supported!</div>
-  <button ng-click="upload.abort()">Cancel Upload</button>
+  <div class="progress">
+    <div class="progress">
+      <div class="progress-bar" role="progressbar" aria-valuenow="{{progress}}" aria-valuemin="0" aria-valuemax="100" style="width: {{progress}}%;">
+        {{progressMessage}}%
+      </div>
+    </div>
+  </div>
 </div>

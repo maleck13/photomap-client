@@ -1,4 +1,4 @@
-angular.module('appMaps', ['google-maps'.ns()])
+angular.module('appMaps', ['uiGmapgoogle-maps'])
   .controller('mainCtrl', function($scope) {
     $scope.map = {center: {latitude: 40.1451, longitude: -99.6680 }, zoom: 4, bounds: {}};
     $scope.options = {scrollwheel: false};
@@ -22,6 +22,14 @@ angular.module('appMaps', ['google-maps'.ns()])
         clickable: false,
         editable: true,
         zIndex: 1
+      }
+    };
+    $scope.eventHandler = {
+      overlaycomplete: function (dm, name, scope, objs) {
+        console.log("You successfully placed a %s", dm.drawingMode);
+      },
+      polylinecomplete: function (dm, name, scope, objs) {
+        console.log("You finished drawing polyline to [%s]", objs[0].getPath().getArray().join(","));
       }
     };
     $scope.markersAndCircleFlag = true;
