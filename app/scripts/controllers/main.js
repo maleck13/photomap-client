@@ -73,10 +73,11 @@ angular.module('photomapApp')
         var uid;
         if($cookieStore) {
           var session = $cookieStore.get("session");
+          console.log("session ", session);
           if(session){
 
-            sessionId = session["sessionId"];
-            uid = session["userId"];
+            sessionId = session["authtoken"];
+            uid = session["userid"];
           }
 
         }
@@ -85,16 +86,17 @@ angular.module('photomapApp')
         var len = ok.length > 30 ? 30 : ok.length;
         for(var i=0; i < len; i++ ){
           var it = ok[i];
+          console.log(it);
           $scope.markers.push({
-            "latitude":it.lonlat[1],
-            "longitude":it.lonlat[0],
-            "title": it.name,
-            "year": it.year,
-            "lon": it.lonlat[0],
-            "lat": it.lonlat[1],
-            "thumb": ServiceConfig.api + "picture?file="+it.name + "&sessid=" + sessionId +"&userid=" + uid,
+            "latitude":it.LonLat[1],
+            "longitude":it.LonLat[0],
+            "title": it.Name,
+            "year": it.Year,
+            "lon": it.LonLat[0],
+            "lat": it.LonLat[1],
+            "thumb": ServiceConfig.api + "picture?file="+it.Img + "&sessid=" + sessionId +"&userid=" + uid + "&id="+it._id,
             "id":i,
-            "date":moment.utc(it.timestamp, 'X').format('YYYY-MM-DD'),
+            "date":moment.utc(it.TimeStamp * 1000).format('YYYY-MM-DD'),
             "show":false,
             "options":{"content":"test" + i},
             handleMarkerClick: function(gMarker,eventName, model){
@@ -144,6 +146,10 @@ angular.module('photomapApp')
       $scope.map.center.longitude = marker.clonedModel.longitude;
       $scope.map.zoom = 10;
     };
+
+    $scope.imgClick = function (){
+      console.log("clicked img");
+    }
 
     $scope.$watch('years.from', function() {
       console.log('hey, myVar has changed!', this);

@@ -1,34 +1,72 @@
 'use strict';
 
 angular.module('photomapApp')
-  .controller('UploadCtrl',['$scope','$upload','$cookieStore', function ($scope,$upload,$cookieStore) {
+  .controller('UploadCtrl',['$scope','$location','$upload','$cookieStore', function ($scope,$location,$upload,$cookieStore) {
 
     var headers = {};
     var session = $cookieStore.get("session");
+    var user;
     if(session){
-      headers["x-session-id"] = session["sessionId"];
-      headers["x-user-id"] = session["userId"];
+      headers["x-authid"] = session["userid"];
+      headers["x-auth"] = session["authtoken"];
+      user = session["userid"];
+    }else{
+      $location.url("/login");
+    }
+
+    var mq_url      = ServiceConfig.amq;
+    var ws = new SockJS(mq_url);
+    var client = Stomp.over(ws);
+    client.heartbeat.outgoing = 0;
+    client.heartbeat.incoming = 0;
+    client.debug = function() {
+      if (window.console && console.log && console.log.apply) {
+        console.log.apply(console, arguments);
+      }
+    };
+
+    function on_connect(){
+      console.log("connected");
+    }
+
+    function on_error(err) {
+      console.log("connection failed " , err);
+    }
+
+    function on_message(m) {
+      console.log('message received',m);
+      m = JSON.parse(m.body);
+      if(m.Status === "complete" || m.Status === "error"){
+        $scope.progress = 100;
+      }else {
+        $scope.progress += 10;
+      }
+      $scope.progressMessage = m.Message + " " + $scope.progress;
+      $scope.$apply();
+    }
+
+    if(client){
+      try {
+        client.disconnect()
+      }catch(e){
+
+      }
+      client.connect('webclient', 'secret', on_connect, on_error, '/');
     }
 
 
 
-
-    //sock.close();
-
     $scope.onFileSelect = function($files) {
       $scope.progress = 0;
       $scope.$apply();
-      var socket = new SockJS(ServiceConfig.api + 'updates');
-      var stompClient = Stomp.over(socket);
-      stompClient.connect({}, function(frame) {
-        //setConnected(true);
-        console.log('Connected: ' + frame);
-      });
+
       //$files: an array of files selected, each file has name, size, and type.
       for (var i = 0; i < $files.length; i++) {
         var file = $files[i];
+        console.log("file",file);
+        client.subscribe('/topic/picjob.update.'+user + file.name, on_message);
         $scope.upload = $upload.upload({
-          url: ServiceConfig.api +'pictures/upload', //upload.php script, node.js route, or servlet url
+          url: ServiceConfig.api +'file/upload', //upload.php script, node.js route, or servlet url
           //method: 'POST' or 'PUT',
           headers: headers,
           //withCredentials: true,
@@ -46,23 +84,6 @@ angular.module('photomapApp')
             $scope.progressMessage = "upload finished +" + $scope.progress + " complete";
           }
         }).success(function(data, status, headers, config) {
-
-          stompClient.subscribe('/queue/jobupdate/'+data.key , function (calResult) {
-
-            var res = JSON.parse(calResult.body);
-            if(res.Status === "complete" || res.Status === "error"){
-              socket.close();
-            }
-            console.log("message ", res.Message);
-            $scope.progress+=10;
-            $scope.progressMessage = res.Message + " " + $scope.progress;
-            $scope.$apply();
-
-
-          });
-
-          stompClient.send("/jobs/update/"+data.key, {}, JSON.stringify({ 'name': name }));
-          // file is uploaded successfully
 
 
         })

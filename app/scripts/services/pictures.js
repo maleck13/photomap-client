@@ -8,9 +8,10 @@ angular.module('photomapApp')
     function setHeaders(){
       var headers = {};
       var session = $cookieStore.get("session");
+      console.log("setting headers ", session);
       if(session){
-        headers["x-session-id"] = session["sessionId"];
-        headers["x-user-id"] = session["userId"];
+        headers["x-authid"] = session["userid"];
+        headers["x-auth"] = session["authtoken"];
       }
       return headers;
     }
@@ -43,7 +44,25 @@ angular.module('photomapApp')
           }).error( function (err, status){
            handleError(err,status,cb);
           });
+      },
+      "getMissingDataPics": function (cb){
+        $http({"method":"get","url":ServiceConfig.api + "pictures/incomplete","headers":setHeaders()})
+          .success(function (ok){
+            cb(undefined,ok)
+          }).error(function(err,status){
+            handleError(err,status,cb);
+          });
+      },
+      "updateMeta": function (id,data, cb){
+        $http({"method":"post","url":ServiceConfig.api + "file/" + id,"data":data,"headers":setHeaders()})
+          .success(function (ok){
+            cb(undefined,ok)
+          }).error(function(err,status){
+            handleError(err,status,cb);
+          });
       }
+
+
     }
 
   }]);

@@ -1,5 +1,5 @@
-angular.module("google-maps.directives.api.utils".ns())
-.factory "BaseObject".ns(), ->
+angular.module('uiGmapgoogle-maps.directives.api.utils')
+.factory 'uiGmapBaseObject', ->
   baseObjectKeywords = ['extended', 'included']
   class BaseObject
     @extend: (obj) ->
@@ -13,11 +13,5 @@ angular.module("google-maps.directives.api.utils".ns())
         @::[key] = value
       obj.included?.apply(@)
       this
-
-    getProp:(propName, otherObject) =>
-      object = if otherObject? then otherObject else @
-      if object[propName]?
-        return object[propName]
-      undefined
 
   BaseObject

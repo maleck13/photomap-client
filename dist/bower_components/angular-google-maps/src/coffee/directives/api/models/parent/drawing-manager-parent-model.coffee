@@ -1,23 +1,33 @@
-angular.module("google-maps.directives.api.models.parent".ns())
-.factory "DrawingManagerParentModel".ns(),
-    ['Logger'.ns(), '$timeout'
-      ($log, $timeout) ->
-        class DrawingManagerParentModel
+angular.module('uiGmapgoogle-maps.directives.api.models.parent')
+.factory 'uiGmapDrawingManagerParentModel',
+    ['uiGmapLogger', '$timeout', 'uiGmapBaseObject', 'uiGmapEventsHelper',
+      ($log, $timeout, BaseObject, EventsHelper) ->
+        class DrawingManagerParentModel extends BaseObject
+          @include EventsHelper
           constructor: (@scope, element, @attrs, @map) ->
-            drawingManager = new google.maps.drawing.DrawingManager @scope.options
-            drawingManager.setMap @map
-            
+            gObject = new google.maps.drawing.DrawingManager @scope.options
+            gObject.setMap @map
+
+            listeners = undefined
+
             if @scope.control?
-              @scope.control.getDrawingManager = () =>
-                drawingManager
+              @scope.control.getDrawingManager = ->
+                gObject
 
             if !@scope.static and @scope.options
-              @scope.$watch("options", (newValue) =>
-                drawingManager?.setOptions(newValue)
-              , true)
-                
-            # Remove drawingManager on scope $destroy
-            scope.$on "$destroy", =>
-              drawingManager.setMap null
-              drawingManager = null
+              @scope.$watch 'options', (newValue) ->
+                gObject?.setOptions newValue
+              , true
+
+            if @scope.events?
+              listeners = @setEvents gObject, @scope, @scope
+              scope.$watch 'events', (newValue, oldValue) =>
+                unless _.isEqual newValue, oldValue
+                  @removeEvents listeners if listeners?
+                  listeners = @setEvents gObject, @scope, @scope
+
+            scope.$on '$destroy', =>
+              @removeEvents listeners if listeners?
+              gObject.setMap null
+              gObject = null
     ]

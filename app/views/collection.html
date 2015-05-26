@@ -1,0 +1,42 @@
+<div class="row-fluid" ng-controller="CollectionCtrl">
+
+  <div class="btn-group well" role="group" aria-label="..." style="padding-bottom: 10px;">
+    <button ng-click="getYearRange()" type="button" class="btn btn-default">By Year</button>
+    <button type="button" ng-click="byLocation()" class="btn btn-default">By Location</button>
+    <button ng-click="getMissingData()" type="button" class="btn btn-default">Missing Data</button>
+    <div class="btn-group col-md-12" role="group" style="padding-top: 5px;">
+      <button ng-repeat="year in years" class="btn btn-info" ng-click="getPhotosForYear(year)" type="button" >{{year}}</button>
+    </div>
+    <div class="col-md-12" ng-show="byLoc">
+      <form class="form-inline">
+        <div class="form-group">
+          <label for="exampleInputName2">Name</label>
+          <input type="text" class="form-control" id="exampleInputName2" placeholder="enter a location">
+        </div>
+        <div class="form-group">
+          <label for="distance">Distance</label>
+          <select id="distance"><option>1</option><option>2</option></select>
+        </div>
+        <button type="submit" class="btn btn-default">Search</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-sm-4 col-md-2" ng-repeat="image in images" >
+      <div class="thumbnail">
+        <a ng-click="openLightboxModal($index)">
+          <img ng-src="{{image.url}}" width="200px;" >
+        </a>
+        <div class="caption">
+          <h5>{{image.title}}</h5>
+          <div class="col-md-12 well">
+          <p style="font-size: 10px;">{{image.tags}}</p>
+          </div>
+          <p><button class="btn btn-primary" ng-click="openLightboxModal($index)" role="button">Edit</button></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

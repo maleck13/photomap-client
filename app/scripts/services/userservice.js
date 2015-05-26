@@ -12,9 +12,10 @@ angular.module('photomapApp')
     function setHeaders(){
       var headers = {};
       var session = $cookieStore.get("session");
+      console.log("setting headers ", session);
       if(session){
-        headers["x-auth"] = session["sessionId"];
-        headers["x-user"] = session["userId"];
+        headers["x-authid"] = session["userid"];
+        headers["x-auth"] = session["authtoken"];
       }
       return headers;
     }
@@ -51,6 +52,7 @@ angular.module('photomapApp')
         console.log("login data ",data);
         $http({method:"post",url:ServiceConfig.api + "user/login","data":data})
           .success(function (data){
+
             $cookieStore.put("session",data);
             cb(undefined,data);
           }).error(function(info,status){

@@ -17,7 +17,8 @@
     "angular-rangeslider": "0.0.7",
     "moment": "~2.8.3",
     "ng-file-upload": "~1.6.12",
-    "ng-file-upload-shim": "~1.6.12"
+    "ng-file-upload-shim": "~1.6.12",
+    "angular-bootstrap-lightbox": "~0.6.0"
   },
   "devDependencies": {
     "angular-mocks": "1.2.6",

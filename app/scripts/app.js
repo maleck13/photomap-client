@@ -1,10 +1,12 @@
 'use strict';
-
+//http://192.168.33.10:8280/api-photomap/
 var ServiceConfig = {
-  "api":"http://192.168.33.10:8280/api-photomap/"
+  "api":"http://192.168.33.10:8003/",
+  "amq":"http://192.168.33.12:15674/stomp"
 };
 
 angular.module('photomapApp', [
+  'bootstrapLightbox',
   'ngCookies',
   'ngResource',
   'ngSanitize',
@@ -21,6 +23,30 @@ angular.module('photomapApp', [
       libraries: 'weather,geometry,visualization'
     });
   }])
+  .config(function (LightboxProvider) {
+    // set a custom template
+    LightboxProvider.templateUrl = 'views/lightbox-modal.html';
+    LightboxProvider.calculateImageDimensionLimits = function (dimensions) {
+      return {
+        'maxWidth': dimensions.windowWidth >= 768 ? // default
+        dimensions.windowWidth - 92 :
+        dimensions.windowWidth - 52,
+        'maxHeight': 1600                           // custom
+      };
+    };
+    LightboxProvider.calculateModalDimensions = function (dimensions) {
+      var width = Math.max(400, dimensions.imageDisplayWidth + 32);
+
+      if (width >= dimensions.windowWidth - 20 || dimensions.windowWidth < 768) {
+        width = 'auto';
+      }
+
+      return {
+        'width': width,                             // default
+        'height': 'auto'                            // custom
+      };
+    };
+  })
   .config(function ($routeProvider) {
     $routeProvider
       .when('/', {
@@ -37,8 +63,8 @@ angular.module('photomapApp', [
         templateUrl: 'views/login.html',
         controller: 'LoginCtrl'
       })
-      .when('/pictures', {
-        templateUrl: 'views/pictures.html',
-        controller: 'PicturesCtrl'
+      .when('/collection', {
+        templateUrl: 'views/collection.html',
+        controller: 'CollectionCtrl'
       }).otherwise({redirectTo: '/'});
   });

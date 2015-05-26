@@ -1,0 +1,51 @@
+<div class="modal-body"
+     ng-swipe-left="Lightbox.nextImage()"
+     ng-swipe-right="Lightbox.prevImage()" ng-controller="CollectionCtrl">
+
+  <!-- image -->
+  <div class="lightbox-image-container">
+
+    {{rotateStyle}}
+    <img id="{{Lightbox.image.id}}" lightbox-src="{{Lightbox.imageUrl}}" alt="">
+
+  </div>
+
+  <!-- caption -->
+  <div class="alert alert-info" style="margin: 1em 0 0;">
+
+    <div class="input-group" style="padding-bottom: 3px;">
+      <span class="input-group-addon" id="basic-addon1">@</span>
+      <input ng-model="Lightbox.image.title" type="text" class="form-control" name="name" aria-describedby="basic-addon1">
+    </div>
+    <div class="input-group" style="padding-bottom: 3px;" >
+      <span class="input-group-addon" id="basic-addon1">@</span>
+      <input ng-model="Lightbox.image.address" type="text" class="form-control" placeholder="address" name="address" aria-describedby="basic-addon1">
+    </div>
+    <div class="input-group" style="padding-bottom: 3px;">
+      <span class="input-group-addon" id="basic-addon1">@</span>
+      <input type="text" ng-model="Lightbox.image.tags" class="form-control" placeholder="tags comma separated" name="tags" aria-describedby="basic-addon1">
+    </div>
+    <div class="input-group" style="padding-bottom: 3px;">
+      <span class="input-group-addon" id="basic-addon1">@</span>
+      <input type="datetime" ng-model="Lightbox.image.date" class="form-control" placeholder="date" name="date" aria-describedby="basic-addon1">
+    </div>
+    <div class="input-group" style="padding-bottom: 3px;">
+      <span class="input-group-addon" id="basic-addon1">@</span>
+      <input type="datetime" ng-model="Lightbox.image.year" class="form-control" placeholder="date" name="date" aria-describedby="basic-addon1">
+    </div>
+    <div class="btn-group" style="padding-bottom: 3px;">
+      <button class="btn-small">Rotate</button>
+    </div>
+    <div class="input-group" style="padding-bottom: 3px;">
+      <span class="input-group-addon" id="basic-addon1">Mark Complete</span>
+      <input name="complete" type="checkbox" ng-model="Lightbox.image.complete">
+    </div>
+
+    <input type="hidden" ng-model="Lightbox.image.index" name="index">
+    <div class="input-group">
+        <button type="button" ng-click="updateImg(Lightbox.image.id)" class="btn btn-danger pull-right">Save</button>
+    </div>
+
+  </div>
+
+</div>

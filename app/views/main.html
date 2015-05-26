@@ -2,15 +2,15 @@
 <div class="row-fluid" ng-controller="MainCtrl">
   <div class="col-lg-9" style="padding-top: 20px;">
     <ui-gmap-google-map center="map.center" zoom="map.zoom">
-      <ui-gmap-markers control="markerControl" models="markers" click="'handleMarkerClick'" coords="'self'" icon="'icon'" batchSize="5"  doCluster="true" clusterOptions="{gridSize: 10, maxZoom: 8}" >
+      <ui-gmap-markers control="markerControl" models="markers" click="'handleMarkerClick'" coords="'self'" icon="'icon'" batchSize="5"  doCluster="true" clusterOptions="{gridSize: 10, maxZoom: 10,zoomOnClick:10}" >
         <ui-gmap-windows show="show" id="{{id}}">
-          <div ng-non-bindable ><img src="{{thumb}}" /><br/><span>{{date}}</span></div>
+          <div ng-non-bindable ><img ng-click="imgClick()" src="{{thumb}}" /><br/><span>{{date}}</span></div>
         </ui-gmap-windows>
       </ui-gmap-markers>
     </ui-gmap-google-map>
   </div>
   <div class="col-lg-2" style="padding-top: 20px;">
-    <div class="col-md-12 thumb" style="padding-bottom: 5px; cursor: pointer;" ng-repeat="mark in markers | limitTo:quantity">
+    <div class="col-md-12 thumb" style="padding-bottom: 5px; cursor: pointer; transform:rotate(270deg)" ng-repeat="mark in markers | limitTo:quantity">
       <img ng-model="imgmodel" id="{{mark.id}}" ng-click="thumbClick()" style="width:150px;" src="{{mark.thumb}}" />
     </div>
   </div>

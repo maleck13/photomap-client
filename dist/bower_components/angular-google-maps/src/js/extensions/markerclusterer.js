@@ -3,7 +3,8 @@
  *
  * Created by Petr Bruna ccg1415 and Nick McCready on 7/13/14.
  */
-angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns(), function () {
+angular.module('uiGmapgoogle-maps.extensions')
+.service('uiGmapExtendMarkerClusterer',['uiGmapLodash', 'uiGmapPropMap', function (uiGmapLodash, PropMap) {
   return {
     init: _.once(function () {
       (function () {
@@ -27,7 +28,7 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
 
           function NgMapCluster(opts) {
             NgMapCluster.__super__.constructor.call(this, opts);
-            this.markers_ = new window.PropMap();
+            this.markers_ = new PropMap();
           }
 
           /**
@@ -77,14 +78,14 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
               }
             } else if (mCount === this.minClusterSize_) {
               // Hide the markers that were showing.
-              this.markers_.values().forEach(function (m) {
+              this.markers_.each(function (m) {
                 m.setMap(null);
               });
             } else {
               marker.setMap(null);
             }
 
-//  this.updateIcon_();
+            //this.updateIcon_();
             return true;
           };
 
@@ -95,7 +96,7 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
            * @return {boolean} True if the marker has already been added.
            */
           NgMapCluster.prototype.isMarkerAlreadyAdded_ = function (marker) {
-            return _.isNullOrUndefined(this.markers_.get(marker.key));
+            return uiGmapLodash.isNullOrUndefined(this.markers_.get(marker.key));
           };
 
 
@@ -108,10 +109,9 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
           NgMapCluster.prototype.getBounds = function () {
             var i;
             var bounds = new google.maps.LatLngBounds(this.center_, this.center_);
-            var markers = this.getMarkers().values();
-            for (i = 0; i < markers.length; i++) {
-              bounds.extend(markers[i].getPosition());
-            }
+            this.getMarkers().each(function(m){
+              bounds.extend(m.getPosition());
+            });
             return bounds;
           };
 
@@ -138,7 +138,7 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
 
           function NgMapMarkerClusterer(map, opt_markers, opt_options) {
             NgMapMarkerClusterer.__super__.constructor.call(this, map, opt_markers, opt_options);
-            this.markers_ = new window.PropMap();
+            this.markers_ = new PropMap();
           }
 
           /**
@@ -188,9 +188,9 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
                * @param {MarkerClusterer} mc The MarkerClusterer whose markers are being clustered.
                * @event
                */
-              google.maps.event.trigger(this, "clusteringbegin", this);
+              google.maps.event.trigger(this, 'clusteringbegin', this);
 
-              if (typeof this.timerRefStatic !== "undefined") {
+              if (typeof this.timerRefStatic !== 'undefined') {
                 clearTimeout(this.timerRefStatic);
                 delete this.timerRefStatic;
               }
@@ -210,8 +210,9 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
 
             var iLast = Math.min(iFirst + this.batchSize_, this.markers_.length);
 
+            var _ms = this.markers_.values();
             for (i = iFirst; i < iLast; i++) {
-              marker = this.markers_.values()[i];
+              marker = _ms[i];
               if (!marker.isAdded && this.isMarkerInBounds_(marker, bounds)) {
                 if (!this.ignoreHidden_ || (this.ignoreHidden_ && marker.getVisible())) {
                   this.addToClosestCluster_(marker);
@@ -224,7 +225,7 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
                 cMarkerClusterer.createClusters_(iLast);
               }, 0);
             } else {
-              // custom addition by ngmaps
+              // custom addition by ui-gmap
               // update icon for all clusters
               for (i = 0; i < this.clusters_.length; i++) {
                 this.clusters_[i].updateIcon_();
@@ -239,7 +240,7 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
                * @param {MarkerClusterer} mc The MarkerClusterer whose markers are being clustered.
                * @event
                */
-              google.maps.event.trigger(this, "clusteringend", this);
+              google.maps.event.trigger(this, 'clusteringend', this);
             }
           };
 
@@ -297,7 +298,7 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
             this.clusters_ = [];
 
             // Reset the markers to not be added and to be removed from the map.
-            this.markers_.values().forEach(function (marker) {
+            this.markers_.each(function (marker) {
               marker.isAdded = false;
               if (opt_hide) {
                 marker.setMap(null);
@@ -323,6 +324,59 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
               return this;
             }).apply(obj1, [obj2]);
           };
+          ////////////////////////////////////////////////////////////////////////////////
+          /*
+          Other overrides relevant to MarkerClusterPlus
+          */
+          ////////////////////////////////////////////////////////////////////////////////
+          /**
+          * Positions and shows the icon.
+          */
+          ClusterIcon.prototype.show = function () {
+            if (this.div_) {
+              var img = "";
+              // NOTE: values must be specified in px units
+              var bp = this.backgroundPosition_.split(" ");
+              var spriteH = parseInt(bp[0].trim(), 10);
+              var spriteV = parseInt(bp[1].trim(), 10);
+              var pos = this.getPosFromLatLng_(this.center_);
+              this.div_.style.cssText = this.createCss(pos);
+              img = "<img src='" + this.url_ + "' style='position: absolute; top: " + spriteV + "px; left: " + spriteH + "px; ";
+              if (!this.cluster_.getMarkerClusterer().enableRetinaIcons_) {
+                img += "clip: rect(" + (-1 * spriteV) + "px, " + ((-1 * spriteH) + this.width_) + "px, " +
+                ((-1 * spriteV) + this.height_) + "px, " + (-1 * spriteH) + "px);";
+              }
+              // ADDED FOR RETINA SUPPORT
+              else {
+                img += "width: " + this.width_ + "px;" + "height: " + this.height_ + "px;";
+              }
+              // END ADD
+              img += "'>";
+              this.div_.innerHTML = img + "<div style='" +
+              "position: absolute;" +
+              "top: " + this.anchorText_[0] + "px;" +
+              "left: " + this.anchorText_[1] + "px;" +
+              "color: " + this.textColor_ + ";" +
+              "font-size: " + this.textSize_ + "px;" +
+              "font-family: " + this.fontFamily_ + ";" +
+              "font-weight: " + this.fontWeight_ + ";" +
+              "font-style: " + this.fontStyle_ + ";" +
+              "text-decoration: " + this.textDecoration_ + ";" +
+              "text-align: center;" +
+              "width: " + this.width_ + "px;" +
+              "line-height:" + this.height_ + "px;" +
+              "'>" + this.sums_.text + "</div>";
+              if (typeof this.sums_.title === "undefined" || this.sums_.title === "") {
+                this.div_.title = this.cluster_.getMarkerClusterer().getTitle();
+              } else {
+                this.div_.title = this.sums_.title;
+              }
+              this.div_.style.display = "";
+            }
+            this.visible_ = true;
+          };
+          //END OTHER OVERRIDES
+          ////////////////////////////////////////////////////////////////////////////////
 
           return NgMapMarkerClusterer;
 
@@ -330,4 +384,4 @@ angular.module('google-maps.extensions'.ns()).service('ExtendMarkerClusterer'.ns
       }).call(this);
     })
   };
-});
+}]);
